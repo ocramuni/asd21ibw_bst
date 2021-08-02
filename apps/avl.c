@@ -1,5 +1,5 @@
 //
-// Created by Marco Giunta on 27/07/2021.
+// AVL tree (height balanced binary search tree)
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,12 +9,12 @@
 #define MAX_CMD_LENGTH 15   // maximum length of a command name
 
 /**
- * Extract command and parameter from command line.
- * @param a parameters array.
- * @param command command to execute.
- * @return size of a.
+ * Extract command, key and data from command line.
+ * @param cmd command to execute
+ * @param key key to use
+ * @param data data to insert in key
  */
-int scanLine(char *cmd, int* key, char *data) {
+void scanLine(char *cmd, int *key, char *data) {
     // scan line of text
     char line[MAX_LINE_SIZE];
     /*
@@ -34,116 +34,127 @@ int scanLine(char *cmd, int* key, char *data) {
 
     char *param = strtok(NULL, "\n");
 
-    int size = 0;
-
     char tmp_data[MAX_LINE_SIZE];
     strcpy(tmp_data, "");
     // A null pointer is returned if there are no tokens left to retrieve.
     if  (param != NULL) {
-        size = sscanf(param, "%d%s", key, tmp_data);
-        //printf("%d", *key);
+        sscanf(param, "%d%s", key, tmp_data);
         if ((strcmp(tmp_data, "") == 0)) {
             strcpy(data, "");
         } else {
-            //printf("'%s'", tmp_data);
             strcpy(data, tmp_data);
         }
     } else {
         strcpy(data, "");
         *key = 0;
     }
-
-    return size;
 }
 
-
 /**
- * Node structure
+ * Structure to represent each
+ * node in an AVL binary search tree
  */
-typedef struct node
+typedef struct avl_node
 {
     int key;
     char *data;
     int height;
-    struct node *left;
-    struct node *right;
-} node;
+    struct avl_node *left;
+    struct avl_node *right;
+} avl_node;
 
-
-// A utility function to get the height of the tree
-int height(struct node* node)
+/**
+ * Get the height of the node
+ * @param avl_node AVL node
+ * @return height of the node
+ */
+int height(struct avl_node* node)
 {
     if (node == NULL)
         return 0;
     return node->height;
 }
 
-// A utility function to get maximum of two integers
+/**
+ * Get maximum of two integers
+ * @param a int first integer
+ * @param b int second integer
+ * @return max of two values
+ */
 int max(int a, int b)
 {
     return (a > b)? a : b;
 }
 
-// A utility function to right rotate subtree rooted with y
-// See the diagram given above.
-struct node* rightRotate(struct node* y)
+/**
+ * Right rotate AVL subtree rooted with y
+ * @param root avl_node AVL root
+ * @return rotated AVL
+ */
+struct avl_node* avl_right_rotate(struct avl_node* root)
 {
-    struct node* x = y->left;
-    struct node* T2 = x->right;
+    struct avl_node* x = root->left;
+    struct avl_node* T2 = x->right;
 
     // Perform rotation
-    x->right = y;
-    y->left = T2;
+    x->right = root;
+    root->left = T2;
 
     // Update heights
-    y->height = max(height(y->left), height(y->right))+1;
+    root->height = max(height(root->left), height(root->right))+1;
     x->height = max(height(x->left), height(x->right))+1;
 
     // Return new root
     return x;
 }
 
-// A utility function to left rotate subtree rooted with x
-// See the diagram given above.
-struct node *leftRotate(struct node* x)
+/**
+ * Left rotate AVL subtree rooted with y
+ * @param root avl_node AVL root
+ * @return rotated AVL
+ */
+struct avl_node *avl_left_rotate(struct avl_node* root)
 {
-    struct node *y = x->right;
-    struct node *T2 = y->left;
+    struct avl_node *y = root->right;
+    struct avl_node *T2 = y->left;
 
     // Perform rotation
-    y->left = x;
-    x->right = T2;
+    y->left = root;
+    root->right = T2;
 
     //  Update heights
-    x->height = max(height(x->left), height(x->right))+1;
+    root->height = max(height(root->left), height(root->right))+1;
     y->height = max(height(y->left), height(y->right))+1;
 
     // Return new root
     return y;
 }
 
-// Get Balance factor of node N
-int getBalance(struct node* node)
+/**
+ * Get balance factor of node N
+ * @param node avl_node
+ * @return balance factor
+ */
+int getBalance(struct avl_node* node)
 {
     if (node == NULL)
         return 0;
     return height(node->left) - height(node->right);
 }
 
-
 /**
- * Create a new node
+ * Create a new avl_node
  * @param key node key
  * @param data node value
- * @return new node
+ * @return new avl node
  */
-struct node* create(int key, char *data)
+struct avl_node* avl_create(int key, char *data)
 {
-    struct node *new_node;
-    new_node = (struct node *) malloc(sizeof(node));
+    struct avl_node *new_node;
+    new_node = (struct avl_node *) malloc(sizeof(avl_node));
     if (new_node == NULL)
     {
-        fprintf (stderr, "create node fail\n");
+        fprintf (stderr, "create avl node fail\n");
         exit(1);
     }
     new_node->key = key;
@@ -156,34 +167,33 @@ struct node* create(int key, char *data)
 }
 
 /**
- * Insert new node in a BST
- * @param node root BST
+ * Insert new node in an AVL
+ * @param avl_node AVL root
  * @param key key to insert
  * @param data value to insert
- * @return BST with new node
+ * @return AVL with new node
  */
-struct node* insert(struct node *node, int key, char *data) {
-    // Return a new node if the tree is empty
+struct avl_node* avl_insert(struct avl_node *node, int key, char *data) {
+    // Return a new avl_node if the tree is empty
     if (node == NULL)
     {
-        return create(key, data);
+        return avl_create(key, data);
     }
 
     // Traverse to the right place and insert the node
     if (key < node->key) {
-        node->left = insert(node->left, key, data);
+        node->left = avl_insert(node->left, key, data);
     } else if (key > node->key) {
-        node->right = insert(node->right, key, data);
-    } else { // Equal keys are not allowed in BST
+        node->right = avl_insert(node->right, key, data);
+    } else { // Equal keys are not allowed in AVL
         return node;
     }
 
-    /* 2. Update height of this ancestor node */
+    /* Update height of this node */
     node->height = 1 + max(height(node->left), height(node->right));
 
-    /* 3. Get the balance factor of this ancestor
-          node to check whether this node became
-          unbalanced */
+    // Get the balance factor of this node
+    // to check whether this node became unbalanced
     int balance = getBalance(node);
 
     // If this node becomes unbalanced, then
@@ -191,247 +201,121 @@ struct node* insert(struct node *node, int key, char *data) {
 
     // Left Left Case
     if (balance > 1 && key < node->left->key)
-        return rightRotate(node);
+        return avl_right_rotate(node);
 
     // Right Right Case
     if (balance < -1 && key > node->right->key)
-        return leftRotate(node);
+        return avl_left_rotate(node);
 
     // Left Right Case
     if (balance > 1 && key > node->left->key)
     {
-        node->left =  leftRotate(node->left);
-        return rightRotate(node);
+        node->left =  avl_left_rotate(node->left);
+        return avl_right_rotate(node);
     }
 
     // Right Left Case
     if (balance < -1 && key < node->right->key)
     {
-        node->right = rightRotate(node->right);
-        return leftRotate(node);
+        node->right = avl_right_rotate(node->right);
+        return avl_left_rotate(node);
     }
 
-    /* return the (unchanged) node pointer */
+    /* return the (unchanged) avl root */
     return node;
 }
 
 /**
  * Search a node with key and, if found, print its value
- * @param node BST to search for the key
+ * @param avl_node AVL to search for the key
  * @param key key to search
  */
-void find(struct node* node, int key) {
+void avl_find(struct avl_node* node, int key) {
     if (node->key == key)
         printf("%s", node->data);
     if (node->key < key) {
         if (node->right != NULL)
-            return find(node->right, key);
+            return avl_find(node->right, key);
         else
             printf("\n");
     } else {
         if (node->left != NULL)
-            return find(node->left, key);
+            return avl_find(node->left, key);
         else
             printf("\n");
     }
 }
 
 /**
- * Return the node with minimum key value found in that tree.
- * @param node node to traverse to find the minimum key
- * @return node with minimum key
- */
-struct node* minKey(struct node* node)
-{
-    struct node* current = node;
-
-    // loop down to find the leftmost leaf
-    while (current && current->left != NULL)
-        current = current->left;
-
-    return current;
-}
-
-/**
- * Delete key from BST and return the new root
- * @param root bst
- * @param key key to delete
- * @return new bst without key
- */
-struct node* delete(struct node* root, int key)
-{
-    // base case
-    if (root == NULL)
-        return root;
-
-    // If the key to be deleted
-    // is smaller than the root's
-    // key, then it lies in left subtree
-    if (key < root->key)
-        root->left = delete(root->left, key);
-
-        // If the key to be deleted
-        // is greater than the root's
-        // key, then it lies in right subtree
-    else if (key > root->key)
-        root->right = delete(root->right, key);
-
-        // if key is same as root's key,
-        // then This is the node
-        // to be deleted
-    else {
-        // node with only one child or no child
-        if (root->left == NULL) {
-            struct node* temp = root->right;
-            free(root);
-            return temp;
-        }
-        else if (root->right == NULL) {
-            struct node* temp = root->left;
-            free(root);
-            return temp;
-        }
-
-        // node with two children:
-        // Get the inorder successor
-        // (smallest in the right subtree)
-        struct node* temp = minKey(root->right);
-        // Copy the inorder
-        // successor's content to this node
-        root->key = temp->key;
-        root->data = temp->data;
-        root->height = temp->height;
-
-        // Delete the inorder successor
-        root->right = delete(root->right, temp->key);
-    }
-    // STEP 2: UPDATE HEIGHT OF THE CURRENT NODE
-    root->height = 1 + max(height(root->left),
-                           height(root->right));
-
-    // STEP 3: GET THE BALANCE FACTOR OF THIS NODE (to
-    // check whether this node became unbalanced)
-    int balance = getBalance(root);
-
-    // If this node becomes unbalanced, then there are 4 cases
-
-    // Left Left Case
-    if (balance > 1 && getBalance(root->left) >= 0)
-        return rightRotate(root);
-
-    // Left Right Case
-    if (balance > 1 && getBalance(root->left) < 0)
-    {
-        root->left =  leftRotate(root->left);
-        return rightRotate(root);
-    }
-
-    // Right Right Case
-    if (balance < -1 && getBalance(root->right) <= 0)
-        return leftRotate(root);
-
-    // Right Left Case
-    if (balance < -1 && getBalance(root->right) > 0)
-    {
-        root->right = rightRotate(root->right);
-        return leftRotate(root);
-    }
-
-    return root;
-}
-
-/**
- * Remove all nodes from BST
+ * Remove all nodes from AVL
  * @param node
  */
-void clear(struct node* node) {
+void avl_clear(struct avl_node* node) {
+    if (node == NULL)
+        return;
+
+    // first recur on left subtree
+    avl_clear(node->left);
+
+    // then recur on right subtree
+    avl_clear(node->right);
+
+    // now deal with the node
     free(node);
+    node = NULL;
 }
-
-// Inorder Traversal
-void inorder(struct node *root) {
-    if (root != NULL) {
-        // Traverse left
-        inorder(root->left);
-
-        // Traverse root
-        printf("%s -> ", root->data);
-
-        // Traverse right
-        inorder(root->right);
-    }
-}
-
-int height2(struct node *node) {
-    if (node == NULL) {
-        return 0;
-    }
-    int h1 = height2(node->left);
-    int h2 = height2(node->right);
-    if (h1 >= h2) {
-        return 1 + h1;
-    } else {
-        return 1 + h2;
-    }
-}
-
 
 /**
- * Show current bst with prefix expression (Polish notation)
- * Given a binary tree, print its nodes in preorder
- * @param node bst to traverse
+ * Show current AVL with prefix expression (Polish notation)
+ * Given an AVL binary tree, print its nodes in preorder
+ * @param avl_node avl to traverse
  */
-void show(struct node* node)
+void avl_show(struct avl_node* node)
 {
     if (node == NULL) {
         printf("NULL ");
         return;
     }
 
-    /* first print data of node */
+    /* first print data of avl_node */
     printf("%d:%s:%d ", node->key, node->data, node->height);
 
     /* then recur on left sutree */
-    show(node->left);
+    avl_show(node->left);
 
     /* now recur on right subtree */
-    show(node->right);
+    avl_show(node->right);
 }
 
-
 /**
- * Execute command with parameters
- * build: inizializzazione della heap tramite sequenza di elementi interi (non necessariamente ordinati)
- * length: restituzione del numero di elementi nella heap
- * getmin: restituzione del valore del nodo radice
- * extract: rimozione del nodo radice
- * insert: inserimento di un nuovo nodo con valore intero x
- * change: assegnazione di un nuovo valore x al nodo con indice i
+ * Execute command with parameters.
+ * Available commands:
+ *   insert: insert a new node with key and data
+ *   find: find a node with key and, if found, return data
+ *   clear: remove every node from tree
+ *   show: print tree nodes in preorder
  * @param command command to execute
- * @param a init array values
- * @param n init array length
- * @param heap heap
+ * @param key key to insert or search
+ * @param data data to insert in key
+ * @return AVT root after operation
  */
-struct node* doCommand(struct node* root, char *command, int key, char *data)  {
+struct avl_node* doCommand(struct avl_node* root, char *command, int key, char *data)  {
     if (strcmp(command, "insert") == 0)
     {
-        root = insert(root, key, data);
-    }
-    else if (strcmp(command, "remove") == 0)
-    {
-        root = delete(root, key);
+        root = avl_insert(root, key, data);
     }
     else if (strcmp(command, "find") == 0)
     {
-        find(root, key);
+        avl_find(root, key);
     }
     else if (strcmp(command, "clear") == 0)
     {
-        clear(root);
+        avl_clear(root);
+        root = NULL;
     }
     else if (strcmp(command, "show") == 0)
     {
-        show(root);
+        avl_show(root);
         printf("\n");
     }
     else if (strcmp(command, "exit") == 0)
@@ -449,19 +333,16 @@ struct node* doCommand(struct node* root, char *command, int key, char *data)  {
 
 int main ()
 {
-    struct node* root = NULL;
+    struct avl_node* root = NULL;
     int key = 0;
     char command[MAX_CMD_LENGTH];
     char data[MAX_CMD_LENGTH];
-    int n;
-
 
     while ((strcmp(command, "exit") != 0))
     {
-        n = scanLine(command, &key, data); // carica in key  la chiave e in data il valore
+        scanLine(command, &key, data); // read command, key and data from stdin
         // execute command
         root = doCommand(root, (char *) &command, key, (char *) &data);
     }
-
     return 0;
 }
