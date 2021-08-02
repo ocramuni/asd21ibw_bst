@@ -1,5 +1,5 @@
 //
-// Created by Marco Giunta on 27/07/2021.
+// Binary Search Tree
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,12 +9,12 @@
 #define MAX_CMD_LENGTH 15   // maximum length of a command name
 
 /**
- * Extract command and parameter from command line.
- * @param a parameters array.
- * @param command command to execute.
- * @return size of a.
+ * Extract command, key and data from command line.
+ * @param cmd command to execute
+ * @param key key to use
+ * @param data data to insert in key
  */
-int scanLine(char *cmd, int* key, char *data) {
+void scanLine(char *cmd, int *key, char *data) {
     // scan line of text
     char line[MAX_LINE_SIZE];
     /*
@@ -34,53 +34,47 @@ int scanLine(char *cmd, int* key, char *data) {
 
     char *param = strtok(NULL, "\n");
 
-    int size = 0, offset = 0, numFilled, n;
-
     char tmp_data[MAX_LINE_SIZE];
     strcpy(tmp_data, "");
     // A null pointer is returned if there are no tokens left to retrieve.
     if  (param != NULL) {
-        size = sscanf(param, "%d%s", key, tmp_data);
-        //printf("%d", *key);
+        sscanf(param, "%d%s", key, tmp_data);
         if ((strcmp(tmp_data, "") == 0)) {
             strcpy(data, "");
         } else {
-            //printf("'%s'", tmp_data);
             strcpy(data, tmp_data);
         }
     } else {
         strcpy(data, "");
         *key = 0;
     }
-
-    return size;
 }
 
-
 /**
- * Node structure
+ * Structure to represent each
+ * node in a binary search tree
  */
-typedef struct node
+typedef struct bst_node
 {
     int key;
     char *data;
-    struct node *left;
-    struct node *right;
-} node;
+    struct bst_node *left;
+    struct bst_node *right;
+} bst_node;
 
 /**
- * Create a new node
+ * Create a new BST node
  * @param key node key
  * @param data node value
- * @return new node
+ * @return new BST node
  */
-struct node* create(int key, char *data)
+struct bst_node* bst_create(int key, char *data)
 {
-    struct node *new_node;
-    new_node = (struct node *) malloc(sizeof(node));
+    struct bst_node *new_node;
+    new_node = (struct bst_node *) malloc(sizeof(bst_node));
     if (new_node == NULL)
     {
-        fprintf (stderr, "create node fail\n");
+        fprintf (stderr, "create bst node fail\n");
         exit(1);
     }
     new_node->key = key;
@@ -98,18 +92,18 @@ struct node* create(int key, char *data)
  * @param data value to insert
  * @return BST with new node
  */
-struct node* insert(struct node *node, int key, char *data) {
+struct bst_node* bst_insert(struct bst_node *node, int key, char *data) {
     // Return a new node if the tree is empty
     if (node == NULL)
     {
-        return create(key, data);
+        return bst_create(key, data);
     }
 
     // Traverse to the right place and insert the node
     if (key < node->key) {
-        node->left = insert(node->left, key, data);
+        node->left = bst_insert(node->left, key, data);
     } else {
-        node->right = insert(node->right, key, data);
+        node->right = bst_insert(node->right, key, data);
     }
     return node;
 }
@@ -119,122 +113,47 @@ struct node* insert(struct node *node, int key, char *data) {
  * @param node BST to search for the key
  * @param key key to search
  */
-void find(struct node* node, int key) {
+void bst_find(struct bst_node* node, int key) {
     if (node->key == key)
         printf("%s", node->data);
     if (node->key < key) {
         if (node->right != NULL)
-            return find(node->right, key);
+            return bst_find(node->right, key);
         else
             printf("\n");
     } else {
         if (node->left != NULL)
-            return find(node->left, key);
+            return bst_find(node->left, key);
         else
             printf("\n");
     }
-}
-
-/**
- * Return the node with minimum key value found in that tree.
- * @param node node to traverse to find the minimum key
- * @return node with minimum key
- */
-struct node* minKey(struct node* node)
-{
-    struct node* current = node;
-
-    // loop down to find the leftmost leaf
-    while (current && current->left != NULL)
-        current = current->left;
-
-    return current;
-}
-
-/**
- * Delete key from BST and return the new root
- * @param root bst
- * @param key key to delete
- * @return new bst without key
- */
-struct node* delete(struct node* root, int key)
-{
-    // base case
-    if (root == NULL)
-        return root;
-
-    // If the key to be deleted
-    // is smaller than the root's
-    // key, then it lies in left subtree
-    if (key < root->key)
-        root->left = delete(root->left, key);
-
-    // If the key to be deleted
-    // is greater than the root's
-    // key, then it lies in right subtree
-    else if (key > root->key)
-        root->right = delete(root->right, key);
-
-    // if key is same as root's key,
-    // then This is the node
-    // to be deleted
-    else {
-        // node with only one child or no child
-        if (root->left == NULL) {
-            struct node* temp = root->right;
-            free(root);
-            return temp;
-        }
-        else if (root->right == NULL) {
-            struct node* temp = root->left;
-            free(root);
-            return temp;
-        }
-
-        // node with two children:
-        // Get the inorder successor
-        // (smallest in the right subtree)
-        struct node* temp = minKey(root->right);
-        // Copy the inorder
-        // successor's content to this node
-        root->key = temp->key;
-        root->data = temp->data;
-
-        // Delete the inorder successor
-        root->right = delete(root->right, temp->key);
-    }
-    return root;
 }
 
 /**
  * Remove all nodes from BST
  * @param node
  */
-void clear(struct node* node) {
-    memset(&node, 0, sizeof(node));
-    //free(node);
-}
+void bst_clear(struct bst_node* node) {
+    if (node == NULL)
+        return;
 
-// Inorder Traversal
-void inorder(struct node *root) {
-    if (root != NULL) {
-        // Traverse left
-        inorder(root->left);
+    // first recur on left subtree
+    bst_clear(node->left);
 
-        // Traverse root
-        printf("%s -> ", root->data);
+    // then recur on right subtree
+    bst_clear(node->right);
 
-        // Traverse right
-        inorder(root->right);
-    }
+    // now deal with the node
+    free(node);
+    node = NULL;
 }
 
 /**
  * Show current bst with prefix expression (Polish notation)
- * Given a binary tree, print its nodes in preorder
+ * Given a BST, print its nodes in preorder
  * @param node bst to traverse
  */
-void show(struct node* node)
+void bst_show(struct bst_node* node)
 {
     if (node == NULL) {
         printf("NULL ");
@@ -244,48 +163,42 @@ void show(struct node* node)
     /* first print data of node */
     printf("%d:%s ", node->key, node->data);
 
-    /* then recur on left sutree */
-    show(node->left);
+    /* then recur on left subtree */
+    bst_show(node->left);
 
     /* now recur on right subtree */
-    show(node->right);
+    bst_show(node->right);
 }
 
 /**
- * Execute command with parameters
- * build: inizializzazione della heap tramite sequenza di elementi interi (non necessariamente ordinati)
- * length: restituzione del numero di elementi nella heap
- * getmin: restituzione del valore del nodo radice
- * extract: rimozione del nodo radice
- * insert: inserimento di un nuovo nodo con valore intero x
- * change: assegnazione di un nuovo valore x al nodo con indice i
+ * Execute command with parameters.
+ * Available commands:
+ *   insert: insert a new node with key and data
+ *   find: bst_find a node with key and, if found, return data
+ *   bst_clear: remove every node from tree
+ *   bst_show: print tree nodes in preorder
  * @param command command to execute
- * @param a init array values
- * @param n init array length
- * @param heap heap
+ * @param key key to insert or search
+ * @param data data to insert in key
+ * @return BST root after operation
  */
-struct node* doCommand(struct node* root, char *command, int key, char *data)  {
+struct bst_node* doCommand(struct bst_node* root, char *command, int key, char *data)  {
     if (strcmp(command, "insert") == 0)
     {
-        root = insert(root, key, data);
-    }
-    else if (strcmp(command, "remove") == 0)
-    {
-        root = delete(root, key);
+        root = bst_insert(root, key, data);
     }
     else if (strcmp(command, "find") == 0)
     {
-        find(root, key);
+        bst_find(root, key);
     }
     else if (strcmp(command, "clear") == 0)
     {
-        //memset(root, NULL, sizeof(node));
-        //clear(root);
-        free(root);
+        bst_clear(root);
+        root = NULL;
     }
     else if (strcmp(command, "show") == 0)
     {
-        show(root);
+        bst_show(root);
         printf("\n");
     }
     else if (strcmp(command, "exit") == 0)
@@ -303,21 +216,16 @@ struct node* doCommand(struct node* root, char *command, int key, char *data)  {
 
 int main ()
 {
-    struct node* root = NULL;
+    struct bst_node* root = NULL;
     int key = 0;
     char command[MAX_CMD_LENGTH];
     char data[MAX_CMD_LENGTH];
-    int n;
-    // minHeap array
-    int heap[MAX_LINE_SIZE];
 
     while ((strcmp(command, "exit") != 0))
     {
-        printf("%p", root);
-        n = scanLine(command, &key, data); // carica in key  la chiave e in data il valore
+        scanLine(command, &key, data); // read command, key and data from stdin
         // execute command
         root = doCommand(root, (char *) &command, key, (char *) &data);
     }
-
     return 0;
 }
