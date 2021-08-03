@@ -131,6 +131,7 @@ void bst_find(struct bst_node* node, int key) {
 
 /**
  * Remove all nodes from BST
+ * Given a BST, remove its nodes in postorder (left, right, root)
  * @param node
  */
 void bst_clear(struct bst_node* node) {
@@ -150,7 +151,7 @@ void bst_clear(struct bst_node* node) {
 
 /**
  * Show current bst with prefix expression (Polish notation)
- * Given a BST, print its nodes in preorder
+ * Given a BST, print its nodes in preorder (root, left, right)
  * @param node bst to traverse
  */
 void bst_show(struct bst_node* node)

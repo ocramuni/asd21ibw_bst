@@ -311,7 +311,8 @@ void rbt_find(struct rbt_node* node, int key) {
 }
 
 /**
- * Remove all nodes from BST
+ * Remove all nodes from RBT
+ * Given a RBT, remove its nodes in postorder (left, right, root)
  * @param node
  */
 void rbt_clear(struct rbt_node* node) {
@@ -331,7 +332,7 @@ void rbt_clear(struct rbt_node* node) {
 
 /**
  * Show current rbt with prefix expression (Polish notation)
- * Given a RBT, print its nodes in preorder
+ * Given a RBT, print its nodes in preorder (root, left, right)
  * @param node rbt to traverse
  */
 void rbt_show(struct rbt_node* node)

@@ -248,6 +248,7 @@ void avl_find(struct avl_node* node, int key) {
 
 /**
  * Remove all nodes from AVL
+ * Given an AVL binary tree, remove its nodes in postorder (left, right, root)
  * @param node
  */
 void avl_clear(struct avl_node* node) {
@@ -267,7 +268,7 @@ void avl_clear(struct avl_node* node) {
 
 /**
  * Show current AVL with prefix expression (Polish notation)
- * Given an AVL binary tree, print its nodes in preorder
+ * Given an AVL binary tree, print its nodes in preorder (root, left, right)
  * @param avl_node avl to traverse
  */
 void avl_show(struct avl_node* node)
