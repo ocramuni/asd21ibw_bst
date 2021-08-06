@@ -8,6 +8,7 @@
 #define MAX_N_LENGTH           1000000       // maximum number of operations
 #define CHART_DATA_POINTS      100           // number of points to plot on chart
 #define ERROR_MAX              0.01          // maximum relative error
+#define MIN_TIMES              20            // minimum number of iterations
 #define MAX_TIMES              10000         // maximum number of iterations
 #define MAX_CMD_LENGTH         15            // maximum length of a command name
 
@@ -25,6 +26,128 @@ struct Records {
     double d2; // deviazione standard
     double d3; //
 };
+
+/*************************
+ *  QuickSort
+ *************************/
+
+/**
+ * A utility function to swap two elements
+ * @param a first element
+ * @param b second element
+ */
+void swap(double* aa, double* bb)
+{
+    double t = *aa;
+    *aa = *bb;
+    *bb = t;
+}
+
+/**
+ * This function takes last element as pivot, places
+ * the pivot element at its correct position in sorted
+ * array, and places all smaller (smaller than pivot)
+ * to left of pivot and all greater elements to right
+ * of pivot
+ * @param arr Array to be sorted
+ * @param low Starting index
+ * @param high position of pivot
+ * @return
+ */
+int partition (double arr[], int low, int high)
+{
+    double pivot = arr[high]; // pivot
+    int i = (low - 1); // Index of smaller element and indicates the right position of pivot found so far
+
+    for (int j = low; j <= high - 1; j++)
+    {
+        // If current element is smaller than the pivot
+        if (arr[j] < pivot)
+        {
+            i++; // increment index of smaller element
+            swap(&arr[i], &arr[j]);
+        }
+    }
+    swap(&arr[i + 1], &arr[high]);
+    return (i + 1);
+}
+
+/**
+ * QuickSort
+ * @param arr Array to be sorted
+ * @param low Starting index
+ * @param high Ending index
+ */
+void quickSort(double arr[], int low, int high)
+{
+    if (low < high)
+    {
+        /* pi is partitioning index, arr[p] is now
+        at right place */
+        int pi = partition(arr, low, high);
+
+        // Separately sort elements before
+        // partition and after partition
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
+}
+
+
+/*************************
+ *  Utilities
+ *************************/
+
+/**
+ * Get system clock resolution
+ * @return clock resolution in nano seconds
+ */
+long getResolution() {
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    do {
+        clock_gettime(CLOCK_MONOTONIC, &end);
+    } while(start.tv_nsec == end.tv_nsec);
+    return (end.tv_nsec - start.tv_nsec);
+}
+
+/**
+ * Get number of iterations from data point number (Nj=ab^j)
+ * @param dp number for data point
+ * @return string length
+ */
+int get_iterations_number(ssize_t dp) {
+    int length;
+    length = MIN_N_LENGTH * (pow (b, (double) dp));
+    return length;
+}
+
+/**
+ * Get median value of array
+ * @param arr array to elaborate
+ * @param n number of elements of array
+ * @return median value of array
+ */
+double get_median(double arr[], int n) {
+    quickSort(arr, 0, n-1);
+    n = (n+1) / 2 - 1;      // -1 as array indexing in C starts from 0
+    return arr[n];
+}
+
+/**
+ * Get the median absolute deviation (MAD)
+ * @param arr array to elaborate
+ * @param n number of elements of array
+ * @param median median value of array
+ * @return median absolute deviation of array
+ */
+double get_mad(double arr[], int n, double median) {
+    for (int i=0; i<n; i++) {
+        arr[i] = fabs(arr[i] - median);
+    }
+    return get_median(arr, n);
+}
+
 
 /***********************************
  *  BST
@@ -200,12 +323,13 @@ void bst_search_and_insert_time(int n, struct Records *record) {
         times_sum += times[k]; // useful to calculate mean
         k++;
 
-    } while ((double)(end - start) < ((double) resolution / ERROR_MAX + (double) resolution));
+    } while (((double)(end - start) < ((double) resolution / ERROR_MAX + (double) resolution)) | (k < MIN_TIMES));
 
     for(int j = 0; j < k; j++){
         bst_clear(pt_clear_nodes[j]);
         pt_clear_nodes[j] = NULL;
     }
+    /*
     // Average time
     double mean;
     mean = (double) times_sum / (double) (k);
@@ -217,6 +341,13 @@ void bst_search_and_insert_time(int n, struct Records *record) {
     sd = sqrt(sd / k);
     record->t1 = mean;
     record->d1 = sd;
+    */
+    double median = 0;
+    median = get_median(times, k);
+    double mad = 0;
+    mad = get_mad(times, k, median);
+    record->t1 = median;
+    record->d1 = mad;
 }
 
 
@@ -504,19 +635,22 @@ void avl_search_and_insert_time(int n, struct Records *record) {
     do {
         // Reset start time on every loop
         w_start = clock();
+        // free-ing the memory while taking times will produce false results, so i save pointers and free them at the end of the cycle
         pt_clear_nodes[k] = avl_search_and_insert(n);
         end = clock();
         // Save amortized time
         times[k] = (double)(end - w_start) / CLOCKS_PER_SEC / (double) n;
         times_sum += times[k]; // useful to calculate mean
+        //printf("avl sum: %.15f - k: %zd\n",times_sum , k);
         k++;
-
-    } while ((double)(end - start) < ((double) resolution / ERROR_MAX + (double) resolution));
+    // short-circuit evaluation
+    } while (((double) (end - start) < ((double) resolution / ERROR_MAX + (double) resolution)) | (k < MIN_TIMES));
 
     for(int j = 0; j < k; j++){
         avl_clear(pt_clear_nodes[j]);
         pt_clear_nodes[j] = NULL;
     }
+    /*
     // Average time
     double mean;
     mean = (double) times_sum / (double) (k);
@@ -525,9 +659,16 @@ void avl_search_and_insert_time(int n, struct Records *record) {
     for (int i = 0; i < k; ++i) {
         sd += pow(times[i] - mean, 2);
     }
-    sd = sqrt(sd / k);
+    sd = sqrt(sd / (double) k);
     record->t2 = mean;
     record->d2 = sd;
+    */
+    double median = 0;
+    median = get_median(times, k);
+    double mad = 0;
+    mad = get_mad(times, k, median);
+    record->t2 = median;
+    record->d2 = mad;
 }
 
 
@@ -900,12 +1041,13 @@ void rbt_search_and_insert_time(int n, struct Records *record) {
         times_sum += times[k]; // useful to calculate mean
         k++;
 
-    } while ((double)(end - start) < ((double) resolution / ERROR_MAX + (double) resolution));
+    } while (((double)(end - start) < ((double) resolution / ERROR_MAX + (double) resolution)) | (k < MIN_TIMES));
 
     for(int j = 0; j < k; j++){
         rbt_clear(pt_clear_nodes[j]);
         pt_clear_nodes[j] = T_Nil;
     }
+    /*
     // Average time
     double mean;
     mean = (double) times_sum / (double) (k);
@@ -917,39 +1059,19 @@ void rbt_search_and_insert_time(int n, struct Records *record) {
     sd = sqrt(sd / k);
     record->t3 = mean;
     record->d3 = sd;
+     */
+    double median = 0;
+    median = get_median(times, k);
+    double mad = 0;
+    mad = get_mad(times, k, median);
+    record->t3 = median;
+    record->d3 = mad;
 }
 
 
-/*************************
- *
- *  Utilities
- *
- *************************/
-
-/**
- * Get system clock resolution
- * @return clock resolution in nano seconds
- */
-long getResolution() {
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    do {
-        clock_gettime(CLOCK_MONOTONIC, &end);
-    } while(start.tv_nsec == end.tv_nsec);
-    return (end.tv_nsec - start.tv_nsec);
-}
-
-/**
- * Get number of iterations from data point number (Nj=ab^j)
- * @param dp number for data point
- * @return string length
- */
-int get_iterations_number(ssize_t dp) {
-    int length;
-    length = MIN_N_LENGTH * (pow (b, (double) dp));
-    return length;
-}
-
+/***********************************
+ *  Main code
+ ************************************/
 
 int main (void) {
     /* Initializes random number generator */
