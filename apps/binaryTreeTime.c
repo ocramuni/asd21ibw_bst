@@ -4,13 +4,14 @@
 #include <math.h>
 #include <string.h>
 
-#define MIN_N_LENGTH           1000          // minimum number of operations
-#define MAX_N_LENGTH           1000000       // maximum number of operations
-#define CHART_DATA_POINTS      100           // number of points to plot on chart
-#define ERROR_MAX              0.01          // maximum relative error
-#define MIN_TIMES              20            // minimum number of iterations
-#define MAX_TIMES              10000         // maximum number of iterations
-#define MAX_CMD_LENGTH         15            // maximum length of a command name
+#define MIN_N_LENGTH           1000      // minimum number of operations
+#define MAX_N_LENGTH           1000000   // maximum number of operations
+#define CHART_DATA_POINTS      100       // number of points to plot on chart
+#define ERROR_MAX              0.01      // maximum relative error
+#define MIN_TIMES              10        // minimum number of iterations
+#define MAX_TIMES              10000     // maximum number of iterations
+#define MAX_CMD_LENGTH         15        // maximum length of a command name
+#define USE_MEDIAN             0         // Use mean/standard deviation or median/median absolute deviation as output data
 
 /* Global variables */
 double b;
@@ -18,18 +19,19 @@ long resolution;
 
 /* Data point record */
 struct Records {
-    int n; // numero iterazioni di ricerca
+    int n;     // Number of search-and-insert iterations
     double t1; //
-    double t2; // tempo medio e ammortizzato di ciascuna operazione
+    double t2; // Average or Median amortized time
     double t3; //
     double d1; //
-    double d2; // deviazione standard
+    double d2; // Standard Deviation or Median Absolute Deviation
     double d3; //
 };
 
-/*************************
+/*********************************
  *  QuickSort
- *************************/
+ *  Needed to get Median and MAD
+ *********************************/
 
 /**
  * A utility function to swap two elements
@@ -52,7 +54,7 @@ void swap(double* aa, double* bb)
  * @param arr Array to be sorted
  * @param low Starting index
  * @param high position of pivot
- * @return
+ * @return position of pivot
  */
 int partition (double arr[], int low, int high)
 {
@@ -82,8 +84,8 @@ void quickSort(double arr[], int low, int high)
 {
     if (low < high)
     {
-        /* pi is partitioning index, arr[p] is now
-        at right place */
+        // pi is partitioning index, arr[p] is now
+        // at right place
         int pi = partition(arr, low, high);
 
         // Separately sort elements before
@@ -129,6 +131,7 @@ int get_iterations_number(ssize_t dp) {
  * @return median value of array
  */
 double get_median(double arr[], int n) {
+    // Order array arr
     quickSort(arr, 0, n-1);
     n = (n+1) / 2 - 1;      // -1 as array indexing in C starts from 0
     return arr[n];
@@ -143,6 +146,7 @@ double get_median(double arr[], int n) {
  */
 double get_mad(double arr[], int n, double median) {
     for (int i=0; i<n; i++) {
+        // get float ABS value
         arr[i] = fabs(arr[i] - median);
     }
     return get_median(arr, n);
@@ -212,13 +216,14 @@ struct bst_node* bst_insert(struct bst_node *node, int key, char *data) {
 }
 
 /**
- * Search a node with key and, if found, print its value
+ * Search a node with key and, if found, return its value
  * @param node BST to search for the key
  * @param key key to search
+ * @return node data if key exist
  */
-char bst_find(struct bst_node* node, int key) {
+const char* bst_find(struct bst_node* node, int key) {
     if (node->key == key)
-        return *node->data;
+        return node->data;
     if (node->key < key) {
         if (node->right != NULL)
             return bst_find(node->right, key);
@@ -226,7 +231,7 @@ char bst_find(struct bst_node* node, int key) {
         if (node->left != NULL)
             return bst_find(node->left, key);
     }
-    return *strdup("");
+    return strdup("");
 }
 
 /**
@@ -278,17 +283,17 @@ void bst_show(struct bst_node* node)
  */
 struct bst_node* bst_search_and_insert(int n) {
     struct bst_node* root = NULL;
-    char result;
+    char result[2] = "";
     int hit = 0;
     int miss = 0;
 
-    for (int i; i < n; i++) {
+    for (int i=0; i < n; i++) {
         // In the GNU C Library the largest value the rand function can return is 2147483647.
         int randomNumber;
         randomNumber = rand();
         if (root != NULL)
-            result = bst_find(root, randomNumber);
-        if ((strcmp(&result, "d") != 0)) {
+            strcpy(result, bst_find(root, randomNumber));
+        if ((strcmp(result, "d") != 0)) {
             miss++;
             root = bst_insert(root, randomNumber, "d");
         } else {
@@ -307,47 +312,54 @@ struct bst_node* bst_search_and_insert(int n) {
 void bst_search_and_insert_time(int n, struct Records *record) {
     clock_t start, end, w_start;
 
-    struct bst_node* pt_clear_nodes[MAX_TIMES];
+    struct bst_node *pt_clear_nodes[MAX_TIMES];
     start = clock();
     // Do the work.
     double times[MAX_TIMES];
     double times_sum = 0;
-    ssize_t k = 0;
+    ssize_t z = 0;
     do {
-        // Reset start time on every loop
-        w_start = clock();
-        pt_clear_nodes[k] = bst_search_and_insert(n);
-        end = clock();
-        // Save amortized time
-        times[k] = (double)(end - w_start) / CLOCKS_PER_SEC / (double) n;
-        times_sum += times[k]; // useful to calculate mean
-        k++;
+        ssize_t k = 0;
+        do {
+            // Reset start time on every loop
+            w_start = clock();
+            // clearing the tree while taking times false the result, clear them at the end of the cycle
+            pt_clear_nodes[k + z] = bst_search_and_insert(n);
+            end = clock();
+            // Save amortized time
+            times[k + z] = (double) (end - w_start) / CLOCKS_PER_SEC / (double) n;
+            if (USE_MEDIAN == 0 )
+                times_sum += times[k + z]; // useful to calculate mean
+            k++;
+        } while ((double) (end - start) < ((double) resolution / ERROR_MAX + (double) resolution));
+        // clear bst trees
+        for (int j = z; j < k + z; j++) {
+            bst_clear(pt_clear_nodes[j]);
+            pt_clear_nodes[j] = NULL;
+        }
+        z = z + k;
+    } while (z < MIN_TIMES);
 
-    } while (((double)(end - start) < ((double) resolution / ERROR_MAX + (double) resolution)) | (k < MIN_TIMES));
-
-    for(int j = 0; j < k; j++){
-        bst_clear(pt_clear_nodes[j]);
-        pt_clear_nodes[j] = NULL;
+    if (USE_MEDIAN == 1) {
+        double median = 0;
+        median = get_median(times, z);
+        double mad = 0;
+        mad = get_mad(times, z, median);
+        record->t1 = median;
+        record->d1 = mad;
+    } else {
+        // Average time
+        double mean;
+        mean = (double) times_sum / (double) (z);
+        // Standard deviation
+        double sd;
+        for (int i = 0; i < z; ++i) {
+            sd += pow(times[i] - mean, 2);
+        }
+        sd = sqrt(sd / z);
+        record->t1 = mean;
+        record->d1 = sd;
     }
-    /*
-    // Average time
-    double mean;
-    mean = (double) times_sum / (double) (k);
-    // Standard deviation
-    double sd;
-    for (int i = 0; i < k; ++i) {
-        sd += pow(times[i] - mean, 2);
-    }
-    sd = sqrt(sd / k);
-    record->t1 = mean;
-    record->d1 = sd;
-    */
-    double median = 0;
-    median = get_median(times, k);
-    double mad = 0;
-    mad = get_mad(times, k, median);
-    record->t1 = median;
-    record->d1 = mad;
 }
 
 
@@ -531,13 +543,13 @@ struct avl_node* avl_insert(struct avl_node *node, int key, char *data) {
 }
 
 /**
- * Search a node with key and, if found, print its value
+ * Search a node with key and, if found, return its value
  * @param avl_node AVL to search for the key
  * @param key key to search
  */
-char avl_find(struct avl_node* node, int key) {
+const char* avl_find(struct avl_node* node, int key) {
     if (node->key == key)
-        return *node->data;
+        return node->data;
     if (node->key < key) {
         if (node->right != NULL)
             return avl_find(node->right, key);
@@ -545,7 +557,7 @@ char avl_find(struct avl_node* node, int key) {
         if (node->left != NULL)
             return avl_find(node->left, key);
     }
-    return *strdup("");
+    return strdup("");
 }
 
 /**
@@ -583,7 +595,7 @@ void avl_show(struct avl_node* node)
     /* first print data of avl_node */
     printf("%d:%s:%d ", node->key, node->data, node->height);
 
-    /* then recur on left sutree */
+    /* then recur on left subtree */
     avl_show(node->left);
 
     /* now recur on right subtree */
@@ -597,17 +609,17 @@ void avl_show(struct avl_node* node)
  */
 struct avl_node* avl_search_and_insert(int n) {
     struct avl_node* root = NULL;
-    char result;
+    char result[2] = "";
     int hit = 0;
     int miss = 0;
 
-    for (int i; i < n; i++) {
+    for (int i=0; i < n; i++) {
         // In the GNU C Library the largest value the rand function can return is 2147483647.
         int randomNumber;
         randomNumber = rand();
         if (root != NULL)
-            result = avl_find(root, randomNumber);
-        if ((strcmp(&result, "d") != 0)) {
+            strcpy(result, avl_find(root, randomNumber));
+        if ((strcmp(result, "d") != 0)) {
             miss++;
             root = avl_insert(root, randomNumber, "d");
         } else {
@@ -631,44 +643,50 @@ void avl_search_and_insert_time(int n, struct Records *record) {
     // Do the work.
     double times[MAX_TIMES];
     double times_sum = 0;
-    ssize_t k = 0;
+    ssize_t z = 0;
     do {
-        // Reset start time on every loop
-        w_start = clock();
-        // free-ing the memory while taking times will produce false results, so i save pointers and free them at the end of the cycle
-        pt_clear_nodes[k] = avl_search_and_insert(n);
-        end = clock();
-        // Save amortized time
-        times[k] = (double)(end - w_start) / CLOCKS_PER_SEC / (double) n;
-        times_sum += times[k]; // useful to calculate mean
-        //printf("avl sum: %.15f - k: %zd\n",times_sum , k);
-        k++;
-    // short-circuit evaluation
-    } while (((double) (end - start) < ((double) resolution / ERROR_MAX + (double) resolution)) | (k < MIN_TIMES));
+        ssize_t k = 0;
+        do {
+            // Reset start time on every loop
+            w_start = clock();
+            // clearing the tree while taking times false the result, clear them at the end of the cycle
+            pt_clear_nodes[k+z] = avl_search_and_insert(n);
+            end = clock();
+            // Save amortized time
+            times[k+z] = (double) (end - w_start) / CLOCKS_PER_SEC / (double) n;
+            if (USE_MEDIAN == 0)
+              times_sum += times[k]; // useful to calculate mean
+            k++;
+            // short-circuit evaluation
+        } while ((double) (end - start) < ((double) resolution / ERROR_MAX + (double) resolution));
+        // clear avl trees
+        for (int j = z; j < k+z; j++) {
+            avl_clear(pt_clear_nodes[j]);
+            pt_clear_nodes[j] = NULL;
+        }
+        z = z+k;
+    } while (z < MIN_TIMES);
 
-    for(int j = 0; j < k; j++){
-        avl_clear(pt_clear_nodes[j]);
-        pt_clear_nodes[j] = NULL;
+    if (USE_MEDIAN == 1) {
+        double median = 0;
+        median = get_median(times, z);
+        double mad = 0;
+        mad = get_mad(times, z, median);
+        record->t2 = median;
+        record->d2 = mad;
+    } else {
+        // Average time
+        double mean;
+        mean = (double) times_sum / (double) (z);
+        // Standard deviation
+        double sd;
+        for (int i = 0; i < z; ++i) {
+            sd += pow(times[i] - mean, 2);
+        }
+        sd = sqrt(sd / (double) z);
+        record->t2 = mean;
+        record->d2 = sd;
     }
-    /*
-    // Average time
-    double mean;
-    mean = (double) times_sum / (double) (k);
-    // Standard deviation
-    double sd;
-    for (int i = 0; i < k; ++i) {
-        sd += pow(times[i] - mean, 2);
-    }
-    sd = sqrt(sd / (double) k);
-    record->t2 = mean;
-    record->d2 = sd;
-    */
-    double median = 0;
-    median = get_median(times, k);
-    double mad = 0;
-    mad = get_mad(times, k, median);
-    record->t2 = median;
-    record->d2 = mad;
 }
 
 
@@ -927,9 +945,9 @@ struct rbt_node* rbt_insert(struct rbt_node *node, int key, char* data)
  * @param node BST to search for the key
  * @param key key to search
  */
-char rbt_find(struct rbt_node* node, int key) {
+const char* rbt_find(struct rbt_node* node, int key) {
     if (node->key == key) {
-        return *node->data;
+        return node->data;
     } else if (node->key < key) {
         if (node->right != T_Nil)
             return rbt_find(node->right, key);
@@ -937,7 +955,7 @@ char rbt_find(struct rbt_node* node, int key) {
         if (node->left != T_Nil)
             return rbt_find(node->left, key);
     }
-    return *strdup("");
+    return strdup("");
 }
 
 /**
@@ -995,18 +1013,17 @@ void rbt_show(struct rbt_node* node)
  */
 struct rbt_node* rbt_search_and_insert(int n) {
     struct rbt_node* root = T_Nil;
-
-    char result;
+    char result[2] = "";
     int hit = 0;
     int miss = 0;
 
-    for (int i; i < n; i++) {
+    for (int i=0; i < n; i++) {
         // In the GNU C Library the largest value the rand function can return is 2147483647.
         int randomNumber;
         randomNumber = rand();
         if (root != T_Nil)
-            result = rbt_find(root, randomNumber);
-        if ((strcmp(&result, "d") != 0)) {
+            strcpy(result, rbt_find(root, randomNumber));
+        if ((strcmp(result, "d") != 0)) {
             miss++;
             root = rbt_insert(root, randomNumber, "d");
         } else {
@@ -1030,42 +1047,48 @@ void rbt_search_and_insert_time(int n, struct Records *record) {
     // Do the work.
     double times[MAX_TIMES];
     double times_sum = 0;
-    ssize_t k = 0;
+    ssize_t z = 0;
     do {
-        // Reset start time on every loop
-        w_start = clock();
-        pt_clear_nodes[k] = rbt_search_and_insert(n);
-        end = clock();
-        // Save amortized time
-        times[k] = (double)(end - w_start) / CLOCKS_PER_SEC / (double) n;
-        times_sum += times[k]; // useful to calculate mean
-        k++;
-
-    } while (((double)(end - start) < ((double) resolution / ERROR_MAX + (double) resolution)) | (k < MIN_TIMES));
-
-    for(int j = 0; j < k; j++){
-        rbt_clear(pt_clear_nodes[j]);
-        pt_clear_nodes[j] = T_Nil;
+        ssize_t k = 0;
+        do {
+            // Reset start time on every loop
+            w_start = clock();
+            // clearing the tree while taking times false the result, clear them at the end of the cycle
+            pt_clear_nodes[k+z] = rbt_search_and_insert(n);
+            end = clock();
+            // Save amortized time
+            times[k+z] = (double) (end - w_start) / CLOCKS_PER_SEC / (double) n;
+            if (USE_MEDIAN == 0)
+                times_sum += times[k]; // useful to calculate mean
+            k++;
+        } while ((double) (end - start) < ((double) resolution / ERROR_MAX + (double) resolution));
+        // clear rbt trees
+        for (int j = z; j < k+z; j++) {
+            rbt_clear(pt_clear_nodes[j]);
+            pt_clear_nodes[j] = T_Nil;
+        }
+        z = z+k;
+    } while (z < MIN_TIMES);
+    if (USE_MEDIAN == 1) {
+        double median = 0;
+        median = get_median(times, z);
+        double mad = 0;
+        mad = get_mad(times, z, median);
+        record->t3 = median;
+        record->d3 = mad;
+    } else {
+        // Average time
+        double mean;
+        mean = (double) times_sum / (double) (z);
+        // Standard deviation
+        double sd;
+        for (int i = 0; i < z; ++i) {
+            sd += pow(times[i] - mean, 2);
+        }
+        sd = sqrt(sd / z);
+        record->t3 = mean;
+        record->d3 = sd;
     }
-    /*
-    // Average time
-    double mean;
-    mean = (double) times_sum / (double) (k);
-    // Standard deviation
-    double sd;
-    for (int i = 0; i < k; ++i) {
-        sd += pow(times[i] - mean, 2);
-    }
-    sd = sqrt(sd / k);
-    record->t3 = mean;
-    record->d3 = sd;
-     */
-    double median = 0;
-    median = get_median(times, k);
-    double mad = 0;
-    mad = get_mad(times, k, median);
-    record->t3 = median;
-    record->d3 = mad;
 }
 
 
@@ -1074,14 +1097,14 @@ void rbt_search_and_insert_time(int n, struct Records *record) {
  ************************************/
 
 int main (void) {
-    /* Initializes random number generator */
+    // Initializes random number generator
     time_t t;
     srand((unsigned) time(&t));
 
-    /* Initialize global variables */
+    // Initialize global variables
     T_Nil = (struct rbt_node *) malloc(sizeof(rbt_node));
 
-    /* Get b parameter needed to calculate number of iterations based on position on x-axis */
+    // Get b parameter needed to calculate number of iterations based on position on x-axis
     b = (double) exp(((double) log(MAX_N_LENGTH) - (double) log(MIN_N_LENGTH)) / (CHART_DATA_POINTS - 1));
 
     /* Get CPU clock resolution */
@@ -1089,9 +1112,9 @@ int main (void) {
 
     struct Records data_points[CHART_DATA_POINTS];
 
-    /* Do the work. */
+    // Do the work.
     for (ssize_t i = 0; i < CHART_DATA_POINTS; i++) {
-        /* Get string length */
+        // Get number of iterations
         int iterations;
         iterations = get_iterations_number(i);
         data_points[i].n = iterations;
