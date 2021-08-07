@@ -1,9 +1,9 @@
-# Albero binario semplice
+# Binary Search Tree
 add_executable(bst bst.c)
-# Albero binario di tipo AVL
+# AVL Binary Tree
 add_executable(avl avl.c)
-# Albero binario di tipo Red-Black
+# Red-Black Tree
 add_executable(rbt rbt.c)
-# Calcolo tempi
+# Times analysis
 add_executable(binaryTreeTime binaryTreeTime.c)
 target_link_libraries(binaryTreeTime m)
