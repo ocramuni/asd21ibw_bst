@@ -1,0 +1,15 @@
+\babel@toc {italian}{}
+\babel@toc {italian}{}
+\contentsline {section}{\numberline {1}Introduzione}{2}%
+\contentsline {section}{\numberline {2}Cenni Teorici}{3}%
+\contentsline {subsection}{\numberline {2.1}BST, Binary search Tree}{3}%
+\contentsline {subsection}{\numberline {2.2}RBT, Red-Black Tree}{3}%
+\contentsline {subsection}{\numberline {2.3}AVL, Adelson-Velsky and Landis Tree}{3}%
+\contentsline {section}{\numberline {3}Aspettative}{4}%
+\contentsline {section}{\numberline {4}Implementazione}{4}%
+\contentsline {section}{\numberline {5}Analisi dei dati ottenuti}{5}%
+\contentsline {subsection}{\numberline {5.1}Grafico dei tempi di esecuzione dei BST}{5}%
+\contentsline {subsection}{\numberline {5.2}Grafici dei tempi di esecuzione dei RBT }{6}%
+\contentsline {subsection}{\numberline {5.3}Grafici dei tempi di esecuzione degli AVL }{7}%
+\contentsline {subsection}{\numberline {5.4}Analisi comparativa tra i 3 alberi}{8}%
+\contentsline {section}{\numberline {6}Conclusioni}{9}%
