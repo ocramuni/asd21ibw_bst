@@ -79,7 +79,6 @@ Il costo asintotico delle operazioni sarà quindi, come per i RBT, \(\mathcal{O}
 Data la maggiore semplicità strutturale e il maggior costo asintotico dei Binary Search Tree ci aspetteremo una maggior inefficienza, che andrà peggiorando se l’albero si sbilancia.
 Avremo quindi un albero più sbilanciato se l’input che andremo ad inserire è abbastanza ordinato.
 
-
 I RBT e gli AVL hanno, invece, tempo asintotico logaritmico per qualsiasi tipo di input; tuttavia, gli AVL grazie alla loro \textquote{regola fondamentale} tendono a sbilanciarsi molto meno (al più di 1) rispetto ai RBT e quindi saranno teoricamente più efficienti nell’operazione di ricerca.
 Nell’operazione di inserimento, i RBT effettuano al più due cammini radice-foglia, riducendosi a uno nel caso l’albero non sia da ribilanciare, mentre gli alberi AVL utilizzano sempre due cammini, uno per inserire l’elemento e uno per ribilanciare sempre l’albero, ci aspetteremo quindi un tempo di esecuzione più lungo per questi ultimi quando parliamo di operazioni di inserimento. 
 
@@ -122,7 +121,8 @@ Da notare anche l’implementazione di un numero minimo di cicli (nel nostro cas
   \caption{Tempi di esecuzione con un BST}
 \end{figure}
 
-Notiamo che non c'è molta differenza tra i valori della media e della mediana, questo perchè inserendo valori casuali all'interno dell'albero, le operazioni di ribilanciamento sono minime portando i tempi minimi e massimi a valori più simili tra di loro.
+Notiamo che non c'è molta differenza tra i valori della media e della mediana.
+Questo perchè nei BST non sono previste operazioni di ribilanciamento dopo un inserimento, portando i tempi di esecuzione minimi e massimi a valori più simili tra di loro.
 \newpage
 
 \subsection{Grafici dei tempi di esecuzione dei RBT }
@@ -145,7 +145,8 @@ Notiamo che non c'è molta differenza tra i valori della media e della mediana, 
   \caption{Tempi di esecuzione con un RBT}
 \end{figure}
 
-In questo caso, la media e la mediana discordano. I RBT non effetuano ribilanciamenti continui, ma solo in certi casi, portando i tempi minimi e massimi ad avere due valori con un range più ampio tra loro e quindi influenzando anche la differenza tra i valori medi e la mediana.
+In questo caso, la media e la mediana discordano.
+I RBT effettuano un ribilanciamento (\textit{rotazioni} e \textit{ricolorazioni}) solo quando un inserimento causa un problema con la proprietà dei \textquote{Cammini Neri}, portando i tempi di esecuzione minimi e massimi ad avere valori con un range più ampio tra loro e quindi influenzando anche la differenza tra i valori medi e la mediana.
 \newpage
 
 \subsection{Grafici dei tempi di esecuzione degli AVL }
@@ -168,7 +169,8 @@ In questo caso, la media e la mediana discordano. I RBT non effetuano ribilancia
   \caption{Tempi di esecuzione con un AVL}
 \end{figure}
 
-Anche in questo caso i valori tra la media e la mediana sono pressochè simili. Gli ALV ribilanciano costantemente l'albero portando il tempo minimo e il tempo massimo ad essere abbastanza vicini.
+Anche in questo caso i valori tra la media e la mediana sono pressochè simili.
+Gli AVL ribilanciano costantemente l'albero portando i tempi di esecuzione minimi e massimi ad essere abbastanza vicini tra loro.
 \newpage
 
 \subsection{Analisi comparativa tra i 3 alberi}
