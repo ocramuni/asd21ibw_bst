@@ -121,6 +121,8 @@ Da notare anche l’implementazione di un numero minimo di cicli (nel nostro cas
   \end{subfigure}
   \caption{Tempi di esecuzione con un BST}
 \end{figure}
+
+Notiamo che non c'è molta differenza tra i valori della media e della mediana, questo perchè inserendo valori casuali all'interno dell'albero, le operazioni di ribilanciamento sono minime portando i tempi minimi e massimi a valori più simili tra di loro.
 \newpage
 
 \subsection{Grafici dei tempi di esecuzione dei RBT }
@@ -142,6 +144,8 @@ Da notare anche l’implementazione di un numero minimo di cicli (nel nostro cas
   \end{subfigure}
   \caption{Tempi di esecuzione con un RBT}
 \end{figure}
+
+In questo caso, la media e la mediana discordano. I RBT non effetuano ribilanciamenti continui, ma solo in certi casi, portando i tempi minimi e massimi ad avere due valori con un range più ampio tra loro e quindi influenzando anche la differenza tra i valori medi e la mediana.
 \newpage
 
 \subsection{Grafici dei tempi di esecuzione degli AVL }
@@ -163,6 +167,8 @@ Da notare anche l’implementazione di un numero minimo di cicli (nel nostro cas
   \end{subfigure}
   \caption{Tempi di esecuzione con un AVL}
 \end{figure}
+
+Anche in questo caso i valori tra la media e la mediana sono pressochè simili. Gli ALV ribilanciano costantemente l'albero portando il tempo minimo e il tempo massimo ad essere abbastanza vicini.
 \newpage
 
 \subsection{Analisi comparativa tra i 3 alberi}
