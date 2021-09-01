@@ -1,5 +1,6 @@
 set xlabel 'Numero nodi'
 set ylabel 'Tempo (s)'
+set xrange [-20000:]
 set key right bottom
 set terminal pdf size 21cm,10cm enhanced color rounded \
     font 'Helvetica,12'

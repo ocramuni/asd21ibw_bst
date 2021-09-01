@@ -1,5 +1,6 @@
 set xlabel 'Numero nodi'
 set ylabel 'Tempo (s)'
+set xrange [-20000:]
 set grid xtics mxtics ytics mytics
 set key right bottom
 set style fill transparent solid 0.5 noborder
